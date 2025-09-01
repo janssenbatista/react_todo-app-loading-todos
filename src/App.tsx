@@ -10,7 +10,6 @@ type FilterType = 'all' | 'active' | 'completed';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [filteredTodos, setFilteredTodos] = useState<Todo[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const itemsLeft = todos.filter(todo => !todo.completed).length;
@@ -32,9 +31,22 @@ export const App: React.FC = () => {
     getAllTodos();
   }, []);
 
+  const filterTodos = (type: FilterType) => {
+    switch (type) {
+      case 'active':
+        return todos.filter(todo => !todo.completed);
+      case 'completed':
+        return todos.filter(todo => todo.completed);
+      default:
+        return todos;
+    }
+  };
+
   if (!USER_ID) {
     return <UserWarning />;
   }
+
+  const filter = filterTodos(filterType);
 
   return (
     <div className="todoapp">
@@ -61,78 +73,41 @@ export const App: React.FC = () => {
         </header>
 
         <section className="todoapp__main" data-cy="TodoList">
-          {!filteredTodos.length &&
-            todos.map(todo => (
-              <div
-                key={todo.id}
-                data-cy="Todo"
-                className={classNames('todo', { completed: todo.completed })}
+          {filter.map(todo => (
+            <div
+              key={todo.id}
+              data-cy="Todo"
+              className={classNames('todo', { completed: todo.completed })}
+            >
+              <label className="todo__status-label">
+                <input
+                  data-cy="TodoStatus"
+                  type="checkbox"
+                  className="todo__status"
+                  checked={todo.completed}
+                />
+              </label>
+
+              <span data-cy="TodoTitle" className="todo__title">
+                {todo.title}
+              </span>
+
+              {/* Remove button appears only on hover */}
+              <button
+                type="button"
+                className="todo__remove"
+                data-cy="TodoDelete"
               >
-                <label className="todo__status-label">
-                  <input
-                    data-cy="TodoStatus"
-                    type="checkbox"
-                    className="todo__status"
-                    checked={todo.completed}
-                  />
-                </label>
+                ×
+              </button>
 
-                <span data-cy="TodoTitle" className="todo__title">
-                  {todo.title}
-                </span>
-
-                {/* Remove button appears only on hover */}
-                <button
-                  type="button"
-                  className="todo__remove"
-                  data-cy="TodoDelete"
-                >
-                  ×
-                </button>
-
-                {/* overlay will cover the todo while it is being deleted or updated */}
-                <div data-cy="TodoLoader" className="modal overlay">
-                  <div className="modal-background has-background-white-ter" />
-                  <div className="loader" />
-                </div>
+              {/* overlay will cover the todo while it is being deleted or updated */}
+              <div data-cy="TodoLoader" className="modal overlay">
+                <div className="modal-background has-background-white-ter" />
+                <div className="loader" />
               </div>
-            ))}
-          {filteredTodos &&
-            filteredTodos.map(todo => (
-              <div
-                key={todo.id}
-                data-cy="Todo"
-                className={classNames('todo', { completed: todo.completed })}
-              >
-                <label className="todo__status-label">
-                  <input
-                    data-cy="TodoStatus"
-                    type="checkbox"
-                    className="todo__status"
-                    checked={todo.completed}
-                  />
-                </label>
-
-                <span data-cy="TodoTitle" className="todo__title">
-                  {todo.title}
-                </span>
-
-                {/* Remove button appears only on hover */}
-                <button
-                  type="button"
-                  className="todo__remove"
-                  data-cy="TodoDelete"
-                >
-                  ×
-                </button>
-
-                {/* overlay will cover the todo while it is being deleted or updated */}
-                <div data-cy="TodoLoader" className="modal overlay">
-                  <div className="modal-background has-background-white-ter" />
-                  <div className="loader" />
-                </div>
-              </div>
-            ))}
+            </div>
+          ))}
         </section>
 
         {/* Hide the footer if there are no todos */}
@@ -150,10 +125,7 @@ export const App: React.FC = () => {
                   selected: filterType === 'all',
                 })}
                 data-cy="FilterLinkAll"
-                onClick={() => {
-                  setFilteredTodos([]);
-                  setFilterType('all');
-                }}
+                onClick={() => setFilterType('all')}
               >
                 All
               </a>
@@ -164,12 +136,7 @@ export const App: React.FC = () => {
                   selected: filterType === 'active',
                 })}
                 data-cy="FilterLinkActive"
-                onClick={() => {
-                  setFilterType('active');
-                  const activeTodos = todos.filter(todo => !todo.completed);
-
-                  setFilteredTodos(activeTodos);
-                }}
+                onClick={() => setFilterType('active')}
               >
                 Active
               </a>
@@ -180,12 +147,7 @@ export const App: React.FC = () => {
                   selected: filterType === 'completed',
                 })}
                 data-cy="FilterLinkCompleted"
-                onClick={() => {
-                  setFilterType('completed');
-                  const completedTodos = todos.filter(todo => todo.completed);
-
-                  setFilteredTodos(completedTodos);
-                }}
+                onClick={() => setFilterType('completed')}
               >
                 Completed
               </a>
